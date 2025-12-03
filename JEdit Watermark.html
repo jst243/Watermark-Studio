@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Watermark App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="j-edit-icon.png" />
+  <link rel="icon" type="image/png" href="watermark-icon.png" />
+  <style>
+    :root {
+      --bg: #f9fafb;
+      --bg-alt: #ffffff;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --accent: #0ea5e9;
+      --accent-soft: rgba(14, 165, 233, 0.12);
+      --text: #0f172a;
+      --muted: #6b7280;
+      --danger: #dc2626;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: #f3f4f6;
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+    }
+    .app-shell {
+      width: 100%;
+      max-width: 1200px;
+      background: var(--bg-alt);
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+      padding-bottom: 10px;
+    }
+    .app-title {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: #f9fafb;
+      color: var(--muted);
+    }
+    .badge-pill {
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      background: #e0f2fe;
+      font-size: 11px;
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 4px rgba(34, 197, 94, 0.9);
+    }
+    .app-header h1 {
+      margin: 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .app-header p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .app-meta {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-size: 11px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr);
+      gap: 16px;
+    }
+    @media (max-width: 900px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .panel-header h2 {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      padding: 10px;
+      display: flex;
+      min-height: 260px;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas {
+      max-width: 100%;
+      max-height: 480px;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      display: block;
+    }
+    .preview-overlay {
+      position: absolute;
+      inset: 10px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .handle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background: #ffffff;
+      border: 1px solid var(--accent);
+      box-shadow: 0 0 4px rgba(15, 23, 42, 0.25);
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .handle.rotate {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      cursor: grab;
+    }
+    .handle.hidden {
+      display: none;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 30px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      position: absolute;
+    }
+    .empty-pill {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px dashed rgba(148, 163, 184, 0.9);
+      color: var(--muted);
+      background: #f9fafb;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .controls-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    @media (max-width: 900px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11px;
+    }
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+    }
+    .control-label span {
+      font-size: 11px;
+    }
+    .control-label strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+    .control-note {
+      font-size: 10px;
+      color: var(--muted);
+    }
+    .text-input,
+    .select-input {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text);
+      font-size: 12px;
+      outline: none;
+    }
+    .text-input:focus,
+    .select-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+    }
+    .range-input {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+    .color-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .color-input {
+      width: 40px;
+      height: 24px;
+      border-radius: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      padding: 0;
+      background: transparent;
+    }
+
+    .toggle-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      font-size: 11px;
+    }
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #f9fafb;
+      cursor: pointer;
+      color: var(--muted);
+      user-select: none;
+    }
+    .toggle input {
+      margin: 0;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .button-primary,
+    .button-ghost {
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 6px 12px;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      background: none;
+      color: inherit;
+      white-space: nowrap;
+    }
+    .button-primary {
+      background: radial-gradient(circle at top, #38bdf8, #0284c7);
+      border-color: rgba(56, 189, 248, 0.9);
+      color: #0b1120;
+      font-weight: 500;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+    }
+    .button-primary:disabled {
+      opacity: 0.5;
+      cursor: default;
+      box-shadow: none;
+    }
+    .button-ghost {
+      border-color: var(--border);
+      background: #ffffff;
+      color: var(--muted);
+    }
+    .pill-soft {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      background: #e0f2fe;
+      color: var(--accent);
+    }
+    .hint-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      font-size: 11px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+  .app-title1 {      display: flex;
+      flex-direction: column;
+      gap: 4px;
+}
+  .app-shell .app-header .app-title h1 {
+    font-family: Cambria, Hoefler Text, Liberation Serif, Times, Times New Roman, serif;
+}
+  .app-shell .app-header .app-title h1 {
+    font-family: Baskerville, Palatino Linotype, Palatino, Century Schoolbook L, Times New Roman, serif;
+}
+  .app-title2 {      display: flex;
+      flex-direction: column;
+      gap: 4px;
+}
+.app-title11 {display: flex;
+      flex-direction: column;
+      gap: 4px;
+}
+  .app-title3 {      display: flex;
+      flex-direction: column;
+      gap: 4px;
+}
+.app-title111 {display: flex;
+      flex-direction: column;
+      gap: 4px;
+}
+.app-title21 {display: flex;
+      flex-direction: column;
+      gap: 4px;
+}
+  .app-title4 {      display: flex;
+      flex-direction: column;
+      gap: 4px;
+}
+.app-title1111 {display: flex;
+      flex-direction: column;
+      gap: 4px;
+}
+.app-title211 {display: flex;
+      flex-direction: column;
+      gap: 4px;
+}
+.app-title31 {display: flex;
+      flex-direction: column;
+      gap: 4px;
+}
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="app-title">
+        <div class="badge-row"></div>
+        <img src="../../../../Downloads/j-edit-icon.png" width="213" height="140" alt=""/>
+        <h1>&nbsp;</h1>
+        <h1>J-MARK Water Mark Studio</h1>
+        <p>Upload, customize, and download your watermarked images.</p>
+      </div>
+</header>
+
+    <main class="main-layout">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Canvas preview</h2>
+          <span class="pill-soft">Drag, resize, and rotate watermark handles</span>
+        </div>
+        <div class="canvas-wrapper">
+<!-- Overlay for transform handles -->
+          <div id="overlay" class="preview-overlay">
+            <div id="handle-tl" class="handle hidden" data-handle="tl"></div>
+            <div id="handle-tr" class="handle hidden" data-handle="tr"></div>
+            <div id="handle-bl" class="handle hidden" data-handle="bl"></div>
+            <div id="handle-br" class="handle hidden" data-handle="br"></div>
+            <div id="handle-rot" class="handle rotate hidden" data-handle="rot"></div>
+          </div>
+
+          <div id="emptyState" class="empty-state">
+            <div class="empty-pill">No image uploaded</div>
+            <div>Click “Upload Image” to get started.</div>
+          </div>
+        </div>
+        <div class="button-row">
+          <button id="uploadButton" class="button-primary" type="button">
+            Upload Image
+          </button>
+          <button id="downloadButton" class="button-ghost" type="button" disabled>
+            Download PNG
+          </button>
+        </div>
+        <input
+          type="file"
+          id="fileInput"
+          accept="image/*"
+          style="display: none"
+        />
+        <div class="hint-row">
+          <span>Images never leave your browser.</span>
+          <span>Use handles on the preview to move, scale, and rotate the text.</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Watermark controls</h2>
+          <span style="font-size:11px;color:var(--muted);">
+            Sliders + direct transform controls in the preview.
+          </span>
+        </div>
+
+        <div class="controls-row">
+          <div class="control-group">
+            <div class="control-label">
+              <strong>Watermark text</strong>
+            </div>
+            <input
+              id="watermarkText"
+              class="text-input"
+              type="text"
+              value="WATERMARK"
+            />
+          </div>
+        </div>
+
+        <div class="controls-grid">
+          <div class="controls-row">
+            <div class="control-group">
+              <div class="control-label">
+                <span>Opacity</span>
+                <span><span id="opacityValue">50</span>%</span>
+              </div>
+              <input
+                id="opacity"
+                class="range-input"
+                type="range"
+                min="5"
+                max="100"
+                value="50"
+              />
+            </div>
+
+            <div class="control-group">
+              <div class="control-label">
+                <span>Font size</span>
+                <span><span id="fontSizeValue">72</span> px</span>
+              </div>
+              <input
+                id="fontSize"
+                class="range-input"
+                type="range"
+                min="12"
+                max="500"
+                value="72"
+              />
+            </div>
+
+            <div class="control-group">
+              <div class="control-label">
+                <span>Rotation</span>
+                <span><span id="rotationValue">-45</span>°</span>
+              </div>
+              <input
+                id="rotation"
+                class="range-input"
+                type="range"
+                min="-180"
+                max="180"
+                value="-45"
+              />
+              <div class="control-note">
+                Drag the top circular handle to rotate interactively.
+              </div>
+            </div>
+
+            <div class="control-group">
+              <div class="control-label">
+                <span>Color</span>
+              </div>
+              <div class="color-row">
+                <input
+                  id="color"
+                  class="color-input"
+                  type="color"
+                  value="#ffffff"
+                />
+                <select id="colorPresets" class="select-input">
+                  <option value="#ffffff">White</option>
+                  <option value="#000000">Black</option>
+                  <option value="#e5e7eb">Light gray</option>
+                  <option value="#0ea5e9">Sky blue</option>
+                  <option value="#f97316">Orange</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="controls-row">
+            <div class="control-group">
+              <div class="control-label">
+                <span>Horizontal position</span>
+                <span><span id="posXValue">50</span>%</span>
+              </div>
+              <input
+                id="positionX"
+                class="range-input"
+                type="range"
+                min="0"
+                max="100"
+                value="50"
+              />
+            </div>
+
+            <div class="control-group">
+              <div class="control-label">
+                <span>Vertical position</span>
+                <span><span id="posYValue">50</span>%</span>
+              </div>
+              <input
+                id="positionY"
+                class="range-input"
+                type="range"
+                min="0"
+                max="100"
+                value="50"
+              />
+            </div>
+
+            <div class="control-group">
+              <div class="control-label">
+                <span>Font family</span>
+              </div>
+              <select id="fontFamily" class="select-input">
+                <option value="Arial">Arial</option>
+                <option value="Inter">Inter</option>
+                <option value="system-ui">System</option>
+                <option value="serif">Serif</option>
+                <option value="monospace">Monospace</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <div class="control-label">
+                <span>Layout</span>
+              </div>
+              <div class="toggle-row">
+                <label class="toggle">
+                  <input id="bold" type="checkbox" checked />
+                  <span>Bold text</span>
+                </label>
+                <label class="toggle">
+                  <input id="pattern" type="checkbox" />
+                  <span>Tile watermark across image</span>
+                </label>
+              </div>
+              <div class="control-note">
+                Handles are available when tiling is disabled (single watermark).
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById("watermarkCanvas");
+      const ctx = canvas.getContext("2d");
+      const emptyState = document.getElementById("emptyState");
+      const fileInput = document.getElementById("fileInput");
+      const uploadButton = document.getElementById("uploadButton");
+      const downloadButton = document.getElementById("downloadButton");
+
+      const watermarkTextInput = document.getElementById("watermarkText");
+      const opacityInput = document.getElementById("opacity");
+      const fontSizeInput = document.getElementById("fontSize");
+      const rotationInput = document.getElementById("rotation");
+      const colorInput = document.getElementById("color");
+      const colorPresets = document.getElementById("colorPresets");
+      const positionXInput = document.getElementById("positionX");
+      const positionYInput = document.getElementById("positionY");
+      const fontFamilyInput = document.getElementById("fontFamily");
+      const boldInput = document.getElementById("bold");
+      const patternInput = document.getElementById("pattern");
+
+      const opacityValue = document.getElementById("opacityValue");
+      const fontSizeValue = document.getElementById("fontSizeValue");
+      const rotationValue = document.getElementById("rotationValue");
+      const posXValue = document.getElementById("posXValue");
+      const posYValue = document.getElementById("posYValue");
+
+      const overlay = document.getElementById("overlay");
+      const hTL = document.getElementById("handle-tl");
+      const hTR = document.getElementById("handle-tr");
+      const hBL = document.getElementById("handle-bl");
+      const hBR = document.getElementById("handle-br");
+      const hRot = document.getElementById("handle-rot");
+      const handles = [hTL, hTR, hBL, hBR, hRot];
+
+      let image = null;
+
+      let scaleFactor = 1;
+      let dragMode = false;
+      let dragType = null;
+      let dragHandle = null;
+      let dragStartCanvas = { x: 0, y: 0 };
+      let dragStartState = null;
+
+      function updateLabels() {
+        opacityValue.textContent = opacityInput.value;
+        fontSizeValue.textContent = fontSizeInput.value;
+        rotationValue.textContent = rotationInput.value;
+        posXValue.textContent = positionXInput.value;
+        posYValue.textContent = positionYInput.value;
+      }
+
+      function getCurrentSettings() {
+        const opacity = parseInt(opacityInput.value, 10) || 0;
+        const fontSize = parseInt(fontSizeInput.value, 10) || 12;
+        const rotation = parseInt(rotationInput.value, 10) || 0;
+        const positionX = parseInt(positionXInput.value, 10) || 0;
+        const positionY = parseInt(positionYInput.value, 10) || 0;
+        const color = colorInput.value || "#ffffff";
+        const fontFamily = fontFamilyInput.value || "Arial";
+        const bold = !!boldInput.checked;
+        const pattern = !!patternInput.checked;
+        const watermarkText = watermarkTextInput.value || "";
+        return {
+          opacity,
+          fontSize,
+          rotation,
+          positionX,
+          positionY,
+          color,
+          fontFamily,
+          bold,
+          pattern,
+          watermarkText,
+        };
+      }
+
+      function drawWatermark() {
+        if (!canvas || !image) return;
+        const {
+          opacity,
+          fontSize,
+          rotation,
+          positionX,
+          positionY,
+          color,
+          fontFamily,
+          bold,
+          pattern,
+          watermarkText,
+        } = getCurrentSettings();
+
+        canvas.width = image.width;
+        canvas.height = image.height;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0);
+
+        if (!watermarkText) {
+          updateHandlesVisibility(false);
+          return;
+        }
+
+        const effectiveFontSize = fontSize * scaleFactor;
+
+        ctx.globalAlpha = opacity / 100;
+        ctx.fillStyle = color;
+        ctx.font =
+          (bold ? "bold " : "") +
+          effectiveFontSize +
+          "px " +
+          (fontFamily || "Arial");
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        const rad = (rotation * Math.PI) / 180;
+
+        if (pattern) {
+          const spacing = effectiveFontSize * 3;
+          for (let y = -spacing; y < canvas.height + spacing * 2; y += spacing) {
+            for (
+              let x = -spacing;
+              x < canvas.width + spacing * 2;
+              x += spacing
+            ) {
+              ctx.save();
+              ctx.translate(x, y);
+              ctx.rotate(rad);
+              ctx.fillText(watermarkText, 0, 0);
+              ctx.restore();
+            }
+          }
+          ctx.globalAlpha = 1;
+          updateHandlesVisibility(false);
+          return;
+        }
+
+        const x = (canvas.width * positionX) / 100;
+        const y = (canvas.height * positionY) / 100;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rad);
+        ctx.fillText(watermarkText, 0, 0);
+        ctx.restore();
+
+        ctx.globalAlpha = 1;
+
+        updateTransformHandles();
+      }
+
+      function handleFileChange(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (!file.type || !file.type.startsWith("image/")) {
+          alert("Please select a valid image file.");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const img = document.createElement("img");
+          img.onload = function () {
+            image = img;
+            emptyState.style.display = "none";
+            downloadButton.disabled = false;
+            scaleFactor = 1;
+            drawWatermark();
+          };
+          img.onerror = function () {
+            alert("Failed to load image. Please try another file.");
+          };
+          img.src = e.target.result;
+        };
+        reader.onerror = function () {
+          alert("Failed to read file. Please try again.");
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function handleDownload() {
+        if (!canvas) return;
+        canvas.toBlob(
+          function (blob) {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "watermarked-image.png";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          },
+          "image/png",
+          1
+        );
+      }
+
+      function updateHandlesVisibility(show) {
+        handles.forEach((h) => {
+          if (show) h.classList.remove("hidden");
+          else h.classList.add("hidden");
+        });
+      }
+
+      function getWatermarkBoxInCanvas() {
+        const {
+          fontSize,
+          rotation,
+          positionX,
+          positionY,
+          fontFamily,
+          bold,
+          watermarkText,
+          pattern,
+        } = getCurrentSettings();
+        if (!watermarkText || pattern || !canvas) return null;
+
+        const effectiveFontSize = fontSize * scaleFactor;
+        ctx.save();
+        ctx.font =
+          (bold ? "bold " : "") +
+          effectiveFontSize +
+          "px " +
+          (fontFamily || "Arial");
+        const metrics = ctx.measureText(watermarkText);
+        ctx.restore();
+
+        const textWidth = metrics.width;
+        const textHeight = effectiveFontSize;
+
+        const cx = (canvas.width * positionX) / 100;
+        const cy = (canvas.height * positionY) / 100;
+        const rad = (rotation * Math.PI) / 180;
+
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+
+        const hw = textWidth / 2;
+        const hh = textHeight / 2;
+
+        const corners = [
+          { x: -hw, y: -hh },
+          { x: hw, y: -hh },
+          { x: hw, y: hh },
+          { x: -hw, y: hh },
+        ].map((p) => ({
+          x: cx + p.x * cos - p.y * sin,
+          y: cy + p.x * sin + p.y * cos,
+        }));
+
+        return {
+          center: { x: cx, y: cy },
+          rotation: rad,
+          width: textWidth,
+          height: textHeight,
+          corners,
+        };
+      }
+
+      function canvasToOverlayCoords(pt) {
+        const canvasRect = canvas.getBoundingClientRect();
+        const overlayRect = overlay.getBoundingClientRect();
+        const scaleX = canvasRect.width / canvas.width;
+        const scaleY = canvasRect.height / canvas.height;
+        return {
+          x: pt.x * scaleX + (canvasRect.left - overlayRect.left),
+          y: pt.y * scaleY + (canvasRect.top - overlayRect.top),
+        };
+      }
+
+      function overlayToCanvasCoords(evt) {
+        const canvasRect = canvas.getBoundingClientRect();
+        const xInCanvasPx = evt.clientX - canvasRect.left;
+        const yInCanvasPx = evt.clientY - canvasRect.top;
+        const scaleX = canvas.width / canvasRect.width;
+        const scaleY = canvas.height / canvasRect.height;
+        return {
+          x: xInCanvasPx * scaleX,
+          y: yInCanvasPx * scaleY,
+        };
+      }
+
+      function updateTransformHandles() {
+        const box = getWatermarkBoxInCanvas();
+        if (!box || !image) {
+          updateHandlesVisibility(false);
+          return;
+        }
+
+        const [tl, tr, br, bl] = box.corners;
+        const topCenter = {
+          x: (tl.x + tr.x) / 2,
+          y: (tl.y + tr.y) / 2,
+        };
+        const rotHandleOffset = 30;
+        const rotHandle = {
+          x:
+            topCenter.x +
+            Math.cos(box.rotation - Math.PI / 2) * rotHandleOffset,
+          y:
+            topCenter.y +
+            Math.sin(box.rotation - Math.PI / 2) * rotHandleOffset,
+        };
+
+        const tlO = canvasToOverlayCoords(tl);
+        const trO = canvasToOverlayCoords(tr);
+        const blO = canvasToOverlayCoords(bl);
+        const brO = canvasToOverlayCoords(br);
+        const rotO = canvasToOverlayCoords(rotHandle);
+
+        const size = 10;
+        const rotSize = 14;
+
+        hTL.style.left = tlO.x - size / 2 + "px";
+        hTL.style.top = tlO.y - size / 2 + "px";
+
+        hTR.style.left = trO.x - size / 2 + "px";
+        hTR.style.top = trO.y - size / 2 + "px";
+
+        hBL.style.left = blO.x - size / 2 + "px";
+        hBL.style.top = blO.y - size / 2 + "px";
+
+        hBR.style.left = brO.x - size / 2 + "px";
+        hBR.style.top = brO.y - size / 2 + "px";
+
+        hRot.style.left = rotO.x - rotSize / 2 + "px";
+        hRot.style.top = rotO.y - rotSize / 2 + "px";
+
+        hTL.style.cursor = "nwse-resize";
+        hBR.style.cursor = "nwse-resize";
+        hTR.style.cursor = "nesw-resize";
+        hBL.style.cursor = "nesw-resize";
+
+        updateHandlesVisibility(true);
+      }
+
+      function isPointInsideBox(ptCanvas) {
+        const box = getWatermarkBoxInCanvas();
+        if (!box) return false;
+
+        const dx = ptCanvas.x - box.center.x;
+        const dy = ptCanvas.y - box.center.y;
+        const cos = Math.cos(-box.rotation);
+        const sin = Math.sin(-box.rotation);
+        const localX = dx * cos - dy * sin;
+        const localY = dx * sin + dy * cos;
+        const hw = box.width / 2;
+        const hh = box.height / 2;
+        return localX >= -hw && localX <= hw && localY >= -hh && localY <= hh;
+      }
+
+      canvas.addEventListener("mousedown", function (evt) {
+        if (!image || patternInput.checked) return;
+        const pt = overlayToCanvasCoords(evt);
+        if (isPointInsideBox(pt)) {
+          dragMode = true;
+          dragType = "move";
+          dragHandle = null;
+          dragStartCanvas = pt;
+          dragStartState = {
+            posX: parseFloat(positionXInput.value) || 50,
+            posY: parseFloat(positionYInput.value) || 50,
+          };
+          evt.preventDefault();
+        }
+      });
+
+      handles.forEach((handle) => {
+        handle.addEventListener("mousedown", function (evt) {
+          if (!image || patternInput.checked) return;
+          const which = handle.dataset.handle;
+          dragMode = true;
+          dragHandle = which;
+          dragStartCanvas = overlayToCanvasCoords(evt);
+
+          const {
+            positionX,
+            positionY,
+            rotation,
+            fontSize,
+          } = getCurrentSettings();
+          dragStartState = {
+            posX: positionX,
+            posY: positionY,
+            rotation,
+            scaleFactor,
+            fontSize,
+          };
+          dragType = which === "rot" ? "rotate" : "scale";
+          evt.preventDefault();
+          evt.stopPropagation();
+        });
+      });
+
+      window.addEventListener("mousemove", function (evt) {
+        if (!dragMode || !image) return;
+        const current = overlayToCanvasCoords(evt);
+
+        if (dragType === "move") {
+          const dx = current.x - dragStartCanvas.x;
+          const dy = current.y - dragStartCanvas.y;
+          const newX =
+            dragStartState.posX + (dx / canvas.width) * 100;
+          const newY =
+            dragStartState.posY + (dy / canvas.height) * 100;
+          positionXInput.value = Math.max(0, Math.min(100, newX));
+          positionYInput.value = Math.max(0, Math.min(100, newY));
+          updateLabels();
+          drawWatermark();
+        } else if (dragType === "scale") {
+          const box = getWatermarkBoxInCanvas();
+          if (!box) return;
+          const center = box.center;
+          const startDist = Math.hypot(
+            dragStartCanvas.x - center.x,
+            dragStartCanvas.y - center.y
+          );
+          const nowDist = Math.hypot(
+            current.x - center.x,
+            current.y - center.y
+          );
+          if (startDist === 0) return;
+          let newScale = (dragStartState.scaleFactor * nowDist) / startDist;
+          newScale = Math.max(0.1, Math.min(5, newScale));
+          scaleFactor = newScale;
+          drawWatermark();
+        } else if (dragType === "rotate") {
+          const box = getWatermarkBoxInCanvas();
+          if (!box) return;
+          const center = box.center;
+          const angleStart = Math.atan2(
+            dragStartCanvas.y - center.y,
+            dragStartCanvas.x - center.x
+          );
+          const angleNow = Math.atan2(
+            current.y - center.y,
+            current.x - center.x
+          );
+          const deltaDeg = ((angleNow - angleStart) * 180) / Math.PI;
+          let newRotation = dragStartState.rotation + deltaDeg;
+          if (newRotation > 180) newRotation -= 360;
+          if (newRotation < -180) newRotation += 360;
+          rotationInput.value = Math.round(newRotation);
+          updateLabels();
+          drawWatermark();
+        }
+      });
+
+      window.addEventListener("mouseup", function () {
+        dragMode = false;
+        dragType = null;
+        dragHandle = null;
+      });
+
+      uploadButton.addEventListener("click", function () {
+        fileInput.click();
+      });
+      fileInput.addEventListener("change", handleFileChange);
+      downloadButton.addEventListener("click", handleDownload);
+
+      [
+        watermarkTextInput,
+        opacityInput,
+        fontSizeInput,
+        rotationInput,
+        colorInput,
+        positionXInput,
+        positionYInput,
+        fontFamilyInput,
+        boldInput,
+        patternInput,
+      ].forEach(function (el) {
+        el.addEventListener("input", function () {
+          if (el === fontSizeInput) {
+            fontSizeValue.textContent = fontSizeInput.value;
+          }
+          if (el === rotationInput) {
+            rotationValue.textContent = rotationInput.value;
+          }
+          updateLabels();
+          if (el === patternInput) {
+            scaleFactor = 1;
+          }
+          drawWatermark();
+        });
+      });
+
+      colorPresets.addEventListener("change", function () {
+        colorInput.value = colorPresets.value;
+        drawWatermark();
+      });
+
+      updateLabels();
+    })();
+  </script>
+</body>
+</html>
