@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Watermark App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/png" href="j-edit-icon.png" />
+  <link rel="icon" type="image/png" href="j-edit-icon.png" />
   <style>
     :root {
       --bg: #f9fafb;
@@ -56,6 +56,19 @@
       flex-direction: column;
       gap: 4px;
     }
+    .app-title h1 {
+      margin: 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: Baskerville, Palatino Linotype, Palatino, Century Schoolbook L, Times New Roman, serif;
+    }
+    .app-title p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
     .badge-row {
       display: flex;
       gap: 8px;
@@ -89,26 +102,6 @@
       border-radius: 999px;
       background: #22c55e;
       box-shadow: 0 0 4px rgba(34, 197, 94, 0.9);
-    }
-    .app-header h1 {
-      margin: 0;
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .app-header p {
-      margin: 0;
-      font-size: 12px;
-      color: var(--muted);
-    }
-    .app-meta {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      font-size: 11px;
-      color: var(--muted);
-      flex-wrap: wrap;
     }
 
     .main-layout {
@@ -366,52 +359,6 @@
       color: var(--muted);
       flex-wrap: wrap;
     }
-  .app-title1 {      display: flex;
-      flex-direction: column;
-      gap: 4px;
-}
-  .app-shell .app-header .app-title h1 {
-    font-family: Cambria, Hoefler Text, Liberation Serif, Times, Times New Roman, serif;
-}
-  .app-shell .app-header .app-title h1 {
-    font-family: Baskerville, Palatino Linotype, Palatino, Century Schoolbook L, Times New Roman, serif;
-}
-  .app-title2 {      display: flex;
-      flex-direction: column;
-      gap: 4px;
-}
-.app-title11 {display: flex;
-      flex-direction: column;
-      gap: 4px;
-}
-  .app-title3 {      display: flex;
-      flex-direction: column;
-      gap: 4px;
-}
-.app-title111 {display: flex;
-      flex-direction: column;
-      gap: 4px;
-}
-.app-title21 {display: flex;
-      flex-direction: column;
-      gap: 4px;
-}
-  .app-title4 {      display: flex;
-      flex-direction: column;
-      gap: 4px;
-}
-.app-title1111 {display: flex;
-      flex-direction: column;
-      gap: 4px;
-}
-.app-title211 {display: flex;
-      flex-direction: column;
-      gap: 4px;
-}
-.app-title31 {display: flex;
-      flex-direction: column;
-      gap: 4px;
-}
   </style>
 </head>
 <body>
@@ -420,11 +367,10 @@
       <div class="app-title">
         <div class="badge-row"></div>
         <img src="j-edit-icon.png" width="213" height="140" alt="logo"/>
-        <h1>&nbsp;</h1>
         <h1>J-MARK Water Mark Studio</h1>
         <p>Upload, customize, and download your watermarked images.</p>
       </div>
-</header>
+    </header>
 
     <main class="main-layout">
       <section class="panel">
@@ -433,10 +379,8 @@
           <span class="pill-soft">Drag, resize, and rotate watermark handles</span>
         </div>
         <div class="canvas-wrapper">
-          <!-- The canvas element the script expects -->
           <canvas id="watermarkCanvas"></canvas>
 
-<!-- Overlay for transform handles -->
           <div id="overlay" class="preview-overlay">
             <div id="handle-tl" class="handle hidden" data-handle="tl"></div>
             <div id="handle-tr" class="handle hidden" data-handle="tr"></div>
@@ -447,7 +391,7 @@
 
           <div id="emptyState" class="empty-state">
             <div class="empty-pill">No image uploaded</div>
-            <div>Click “Upload Image” to get started.</div>
+            <div>Click "Upload Image" to get started.</div>
           </div>
         </div>
         <div class="button-row">
@@ -672,13 +616,43 @@
       const handles = [hTL, hTR, hBL, hBR, hRot];
 
       let image = null;
-
       let scaleFactor = 1;
       let dragMode = false;
       let dragType = null;
       let dragHandle = null;
       let dragStartCanvas = { x: 0, y: 0 };
       let dragStartState = null;
+
+      // Wire up upload button
+      uploadButton.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      // Handle file selection
+      fileInput.addEventListener("change", handleFileChange);
+
+      // Wire up download button
+      downloadButton.addEventListener("click", handleDownload);
+
+      // Update labels when sliders change
+      [opacityInput, fontSizeInput, rotationInput, positionXInput, positionYInput].forEach((input) => {
+        input.addEventListener("input", () => {
+          updateLabels();
+          drawWatermark();
+        });
+      });
+
+      // Redraw on any control change
+      [watermarkTextInput, colorInput, fontFamilyInput, boldInput, patternInput].forEach((input) => {
+        input.addEventListener("input", drawWatermark);
+        input.addEventListener("change", drawWatermark);
+      });
+
+      // Color preset dropdown
+      colorPresets.addEventListener("change", () => {
+        colorInput.value = colorPresets.value;
+        drawWatermark();
+      });
 
       function updateLabels() {
         opacityValue.textContent = opacityInput.value;
@@ -987,6 +961,7 @@
         return localX >= -hw && localX <= hw && localY >= -hh && localY <= hh;
       }
 
+      // Canvas drag to move watermark
       canvas.addEventListener("mousedown", function (evt) {
         if (!image || patternInput.checked) return;
         const pt = overlayToCanvasCoords(evt);
@@ -1003,9 +978,80 @@
         }
       });
 
+      // Handle drag for resize/rotate
       handles.forEach((handle) => {
         handle.addEventListener("mousedown", function (evt) {
-[...]
+          if (!image) return;
+          const handleType = handle.dataset.handle;
+          dragMode = true;
+          dragType = handleType === "rot" ? "rotate" : "resize";
+          dragHandle = handleType;
+          dragStartCanvas = overlayToCanvasCoords(evt);
+          const box = getWatermarkBoxInCanvas();
+          if (box) {
+            dragStartState = {
+              posX: parseFloat(positionXInput.value) || 50,
+              posY: parseFloat(positionYInput.value) || 50,
+              fontSize: parseFloat(fontSizeInput.value) || 72,
+              rotation: parseFloat(rotationInput.value) || 0,
+              center: box.center,
+              width: box.width,
+              height: box.height,
+              rotRad: box.rotation,
+            };
+          }
+          evt.stopPropagation();
+          evt.preventDefault();
+        });
+      });
+
+      // Mouse move for dragging
+      document.addEventListener("mousemove", function (evt) {
+        if (!dragMode || !dragStartState) return;
+        const pt = overlayToCanvasCoords(evt);
+
+        if (dragType === "move") {
+          const dx = pt.x - dragStartCanvas.x;
+          const dy = pt.y - dragStartCanvas.y;
+          const newPosX = dragStartState.posX + (dx / canvas.width) * 100;
+          const newPosY = dragStartState.posY + (dy / canvas.height) * 100;
+          positionXInput.value = Math.max(0, Math.min(100, newPosX));
+          positionYInput.value = Math.max(0, Math.min(100, newPosY));
+          updateLabels();
+          drawWatermark();
+        } else if (dragType === "rotate") {
+          const cx = dragStartState.center.x;
+          const cy = dragStartState.center.y;
+          const angle = Math.atan2(pt.y - cy, pt.x - cx);
+          const degrees = (angle * 180) / Math.PI + 90;
+          rotationInput.value = Math.round(degrees);
+          updateLabels();
+          drawWatermark();
+        } else if (dragType === "resize") {
+          const dx = pt.x - dragStartCanvas.x;
+          const dy = pt.y - dragStartCanvas.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const scale = 1 + dist / 100;
+          const newSize = Math.round(dragStartState.fontSize * scale);
+          fontSizeInput.value = Math.max(12, Math.min(500, newSize));
+          updateLabels();
+          drawWatermark();
+        }
+      });
+
+      // Mouse up to end drag
+      document.addEventListener("mouseup", function () {
+        if (dragMode) {
+          dragMode = false;
+          dragType = null;
+          dragHandle = null;
+          dragStartState = null;
+        }
+      });
+
+      // Initialize
+      updateLabels();
+    })();
   </script>
 </body>
 </html>
