@@ -433,6 +433,9 @@
           <span class="pill-soft">Drag, resize, and rotate watermark handles</span>
         </div>
         <div class="canvas-wrapper">
+          <!-- The canvas element the script expects -->
+          <canvas id="watermarkCanvas"></canvas>
+
 <!-- Overlay for transform handles -->
           <div id="overlay" class="preview-overlay">
             <div id="handle-tl" class="handle hidden" data-handle="tl"></div>
@@ -632,6 +635,10 @@
   <script>
     (function () {
       const canvas = document.getElementById("watermarkCanvas");
+      if (!canvas) {
+        console.error("Canvas element not found: #watermarkCanvas");
+        return;
+      }
       const ctx = canvas.getContext("2d");
       const emptyState = document.getElementById("emptyState");
       const fileInput = document.getElementById("fileInput");
@@ -998,131 +1005,7 @@
 
       handles.forEach((handle) => {
         handle.addEventListener("mousedown", function (evt) {
-          if (!image || patternInput.checked) return;
-          const which = handle.dataset.handle;
-          dragMode = true;
-          dragHandle = which;
-          dragStartCanvas = overlayToCanvasCoords(evt);
-
-          const {
-            positionX,
-            positionY,
-            rotation,
-            fontSize,
-          } = getCurrentSettings();
-          dragStartState = {
-            posX: positionX,
-            posY: positionY,
-            rotation,
-            scaleFactor,
-            fontSize,
-          };
-          dragType = which === "rot" ? "rotate" : "scale";
-          evt.preventDefault();
-          evt.stopPropagation();
-        });
-      });
-
-      window.addEventListener("mousemove", function (evt) {
-        if (!dragMode || !image) return;
-        const current = overlayToCanvasCoords(evt);
-
-        if (dragType === "move") {
-          const dx = current.x - dragStartCanvas.x;
-          const dy = current.y - dragStartCanvas.y;
-          const newX =
-            dragStartState.posX + (dx / canvas.width) * 100;
-          const newY =
-            dragStartState.posY + (dy / canvas.height) * 100;
-          positionXInput.value = Math.max(0, Math.min(100, newX));
-          positionYInput.value = Math.max(0, Math.min(100, newY));
-          updateLabels();
-          drawWatermark();
-        } else if (dragType === "scale") {
-          const box = getWatermarkBoxInCanvas();
-          if (!box) return;
-          const center = box.center;
-          const startDist = Math.hypot(
-            dragStartCanvas.x - center.x,
-            dragStartCanvas.y - center.y
-          );
-          const nowDist = Math.hypot(
-            current.x - center.x,
-            current.y - center.y
-          );
-          if (startDist === 0) return;
-          let newScale = (dragStartState.scaleFactor * nowDist) / startDist;
-          newScale = Math.max(0.1, Math.min(5, newScale));
-          scaleFactor = newScale;
-          drawWatermark();
-        } else if (dragType === "rotate") {
-          const box = getWatermarkBoxInCanvas();
-          if (!box) return;
-          const center = box.center;
-          const angleStart = Math.atan2(
-            dragStartCanvas.y - center.y,
-            dragStartCanvas.x - center.x
-          );
-          const angleNow = Math.atan2(
-            current.y - center.y,
-            current.x - center.x
-          );
-          const deltaDeg = ((angleNow - angleStart) * 180) / Math.PI;
-          let newRotation = dragStartState.rotation + deltaDeg;
-          if (newRotation > 180) newRotation -= 360;
-          if (newRotation < -180) newRotation += 360;
-          rotationInput.value = Math.round(newRotation);
-          updateLabels();
-          drawWatermark();
-        }
-      });
-
-      window.addEventListener("mouseup", function () {
-        dragMode = false;
-        dragType = null;
-        dragHandle = null;
-      });
-
-      uploadButton.addEventListener("click", function () {
-        fileInput.click();
-      });
-      fileInput.addEventListener("change", handleFileChange);
-      downloadButton.addEventListener("click", handleDownload);
-
-      [
-        watermarkTextInput,
-        opacityInput,
-        fontSizeInput,
-        rotationInput,
-        colorInput,
-        positionXInput,
-        positionYInput,
-        fontFamilyInput,
-        boldInput,
-        patternInput,
-      ].forEach(function (el) {
-        el.addEventListener("input", function () {
-          if (el === fontSizeInput) {
-            fontSizeValue.textContent = fontSizeInput.value;
-          }
-          if (el === rotationInput) {
-            rotationValue.textContent = rotationInput.value;
-          }
-          updateLabels();
-          if (el === patternInput) {
-            scaleFactor = 1;
-          }
-          drawWatermark();
-        });
-      });
-
-      colorPresets.addEventListener("change", function () {
-        colorInput.value = colorPresets.value;
-        drawWatermark();
-      });
-
-      updateLabels();
-    })();
+[...]
   </script>
 </body>
 </html>
